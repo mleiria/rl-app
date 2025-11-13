@@ -127,6 +127,7 @@ public class TaxiEnvironment implements Environment {
         }
         // Encode the new state after taking the action
         int nextState = encodeState();
+
         return new StepResult(nextState, reward, done);
     }
 
@@ -152,4 +153,19 @@ public class TaxiEnvironment implements Environment {
 
     }
 
+    public int getTaxiRow() {
+        return taxiRow;
+    }
+
+    public int getTaxiCol() {
+        return taxiCol;
+    }
+
+    public int getDestinationIdx() {
+        return destinationIdx;
+    }
+
+    public int getPassengerLocationIdx() {
+        return passengerLocationIdx;
+    }
 }

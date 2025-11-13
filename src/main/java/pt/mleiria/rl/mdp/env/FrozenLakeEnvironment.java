@@ -83,7 +83,7 @@ public class FrozenLakeEnvironment implements Environment {
     public StepResult step(int action) {
         int row = currentState / GRID_SIZE;
         int col = currentState % GRID_SIZE;
-        printMatrixState(row, col, action);
+        //printMatrixState(row, col, action);
 
         if (action == 0) row = Math.max(0, row - 1);         // Up
         else if (action == 1) col = Math.min(GRID_SIZE - 1, col + 1); // Right

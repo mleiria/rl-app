@@ -27,6 +27,17 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- In your pom.xml <dependencies> section -->
+        <dependency>
+            <groupId>org.java-websocket</groupId>
+            <artifactId>Java-WebSocket</artifactId>
+            <version>1.5.6</version> <!-- Use a recent version -->
+        </dependency>
+        <dependency>
+            <groupId>pt.mleiria</groupId>
+            <artifactId>ml-lib</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>ai.djl</groupId>
             <artifactId>api</artifactId>
@@ -96,6 +107,16 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>21</source>
+                    <target>21</target>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
 </project>

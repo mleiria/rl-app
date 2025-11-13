@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RL Agent Visualizer</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0; /* Good practice to reset default margin */
+        }
+
+        /* NEW: This is the main wrapper for our layout */
+        #main-container {
+            display: flex;
+            flex-direction: row; /* Arrange items horizontally */
+            align-items: center; /* Center items vertically relative to each other */
+            gap: 50px; /* Adds space between the grid and the summary */
+        }
+
+        #grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            grid-template-rows: repeat(4, 100px);
+            border: 2px solid #333;
+        }
+
+        .grid-cell {
+            width: 100px;
+            height: 100px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        /* NEW: Styles for the summary box */
+        #summary {
+            padding: 20px;
+            border: 2px solid #333;
+            background-color: #fff;
+            border-radius: 8px;
+            width: 250px; /* Give it a fixed width */
+        }
+        #summary h2 {
+            margin-top: 0;
+            text-align: center;
+        }
+        #summary p {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+
+        /* Cell styles (unchanged) */
+        .frozen { background-color: #d4f1f9; }
+        .start { background-color: #add8e6; }
+        .hole { background-color: #333; color: white; }
+        .goal { background-color: #90ee90; }
+        .agent { background-color: #ff6347; } /* Red for the agent */
+    </style>
+</head>
+<body>
+
+<!-- NEW: Wrap everything in the main-container -->
+<div id="main-container">
+
+    <!-- The grid remains the same -->
+    <div id="grid-container"></div>
+
+    <!-- The new summary div -->
+    <div id="summary">
+        <h2>Live Data</h2>
+        <p>Episode: <span id="episode-data">...</span></p>
+        <p>Step: <span id="step-data">...</span></p>
+        <p>Last Reward: <span id="reward-data">...</span></p>
+    </div>
+
+</div>
+
+<script>
+    // --- JavaScript logic (with updates to handle new data) ---
+
+    const N_ROWS = 4;
+    const N_COLS = 4;
+    const GRID_SIZE = N_ROWS * N_COLS;
+    const HOLES = [5, 7, 11, 12];
+    const GOAL_STATE = 15;
+    let lastAgentPosition = -1;
+
+    const gridContainer = document.getElementById('grid-container');
+    // NEW: Get references to the summary spans
+    const episodeSpan = document.getElementById('episode-data');
+    const stepSpan = document.getElementById('step-data');
+    const rewardSpan = document.getElementById('reward-data');
+
+    // ... (Grid creation logic is the same) ...
+    for (let i = 0; i < N_ROWS * N_COLS; i++) {
+        const cell = document.createElement('div');
+        cell.id = `cell-${i}`;
+        cell.classList.add('grid-cell');
+        let type = 'frozen', text = '';
+        if (i === 0) { type = 'start'; text = 'S'; }
+        else if (i === GOAL_STATE) { type = 'goal'; text = 'G'; }
+        else if (HOLES.includes(i)) { type = 'hole'; text = 'H'; }
+        cell.classList.add(type); cell.innerText = text;
+        gridContainer.appendChild(cell);
+    }
+
+    function updateAgentPosition(data) {
+        const newPosition = data.agentPosition;
+        if (lastAgentPosition !== -1) {
+            const lastCell = document.getElementById(`cell-${lastAgentPosition}`);
+            lastCell.classList.remove('agent');
+        }
+        const newCell = document.getElementById(`cell-${newPosition}`);
+        newCell.classList.add('agent');
+        lastAgentPosition = newPosition;
+
+        episodeSpan.innerText = data.epoch ?? episodeSpan.innerText;
+        stepSpan.innerText = data.stepCount ?? stepSpan.innerText;
+        rewardSpan.innerText = data.totalReward ?? rewardSpan.innerText;
+    }
+
+    const socket = new WebSocket('ws://localhost:8887/frozenlake');
+
+    socket.onopen = function(event) {
+        console.log("Connected to Java visualizer server.");
+    };
+
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        console.log("Received state:", data);
+
+        // Update the agent's position
+        updateAgentPosition(data);
+
+
+    };
+    // ... (socket.onclose is the same) ...
+</script>
+</body>
+</html>
