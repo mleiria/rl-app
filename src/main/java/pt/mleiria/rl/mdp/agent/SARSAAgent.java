@@ -1,5 +1,7 @@
 package pt.mleiria.rl.mdp.agent;
 
+import pt.mleiria.rl.mdp.vo.AgentType;
+
 public class SARSAAgent extends  BaseAgent {
     /**
      * Constructs a SARSA agent with specified parameters.
@@ -8,19 +10,21 @@ public class SARSAAgent extends  BaseAgent {
      * @param numActions The number of actions available to the agent.
      */
     public SARSAAgent(final int numStates, final int numActions) {
-        super("SARSA", numStates, numActions, 0.5, 0.99, 0.1);
+        super(AgentType.SARSA, numStates, numActions, 0.5, 0.99, 0.1);
     }
 
+    /**
+     * Updates the Q-value for the given state-action pair using the SARSA update rule.
+     *
+     * @param state      The current state.
+     * @param action     The action taken.
+     * @param reward     The reward received.
+     * @param nextState  The next state after taking the action.
+     * @param nextAction The action chosen in the next state.
+     */
     @Override
     public void update(int state, int action, double reward, int nextState, int nextAction) {
-        // Uses the Q-Value of the action that was actually chosen for the next state
-        final double nextQ = qTable[nextState][nextAction];
-
-        // Update the Q-value for the current state-action pair using the SARSA formula
-        // qTable[state][action] += alpha * (reward + gamma * nextQ - qTable[state][action]);
-        final double tdTarget = reward + gamma * nextQ;
-        final double tdError = tdTarget - qTable[state][action];
-        qTable[state][action] += alpha * tdError;
+        updateSARSA(state, action, reward, nextState, nextAction);
     }
 
 

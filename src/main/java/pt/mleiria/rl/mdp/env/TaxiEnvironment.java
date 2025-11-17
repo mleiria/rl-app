@@ -62,11 +62,15 @@ public class TaxiEnvironment implements Environment {
     public int reset() {
         this.taxiRow = random.nextInt(GRID_ROWS);
         this.taxiCol = random.nextInt(GRID_COLS);
+        //this.passengerLocationIdx = 2; // Fixed passenger location for testing
+        //this.destinationIdx = 4; // Fixed destination for testing
+
         this.passengerLocationIdx = random.nextInt(LOCATIONS.length); // Randomly choose a passenger location
         // Ensure destination is different from passenger location
         do {
             this.destinationIdx = random.nextInt(LOCATIONS.length);
         } while (this.destinationIdx == this.passengerLocationIdx);
+
         return encodeState();
     }
 
@@ -81,6 +85,24 @@ public class TaxiEnvironment implements Environment {
         state += this.taxiCol * 4 * 5; // 5 rows, 4 columns
         state += this.taxiRow * 4 * 5 * 5; // 5 rows, 5 columns, 4 passenger locations
         return state;
+    }
+
+    /**
+     * Manually sets the environment to a specific, deterministic state.
+     * This is useful for testing and debugging.
+     *
+     * @param taxiRow The desired row for the taxi.
+     * @param taxiCol The desired column for the taxi.
+     * @param passIdx The desired passenger location index (0-4).
+     * @param destIdx The desired destination index (0-3).
+     * @return The encoded state for this specific configuration.
+     */
+    public int setState(int taxiRow, int taxiCol, int passIdx, int destIdx) {
+        this.taxiRow = taxiRow;
+        this.taxiCol = taxiCol;
+        this.passengerLocationIdx = passIdx;
+        this.destinationIdx = destIdx;
+        return encodeState();
     }
 
     @Override

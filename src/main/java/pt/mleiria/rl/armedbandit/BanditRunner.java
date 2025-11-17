@@ -16,16 +16,16 @@ public class BanditRunner {
         int numSteps = 1000;
 
         // --- Agents Setup ---
-        Agent greedyAgent = new GreedyAgent(numArms);
-        Agent epsilonGreedyAgent = new EpsilonGreedyAgent(numArms, 0.1);
-        Agent ucbAgent = new UCBAgent(numArms, 2.0);
-        Agent boltzmannAgent = new BoltzmannAgent(numArms, 0.5);
+        ArmedBanditAgent greedyAgent = new GreedyArmedBanditAgent(numArms);
+        ArmedBanditAgent epsilonGreedyAgent = new EpsilonGreedyArmedBanditAgent(numArms, 0.1);
+        ArmedBanditAgent ucbAgent = new UCBArmedBanditAgent(numArms, 2.0);
+        ArmedBanditAgent boltzmannAgent = new BoltzmannArmedBanditAgent(numArms, 0.5);
 
-        List<Agent> agents = List.of(greedyAgent, epsilonGreedyAgent, ucbAgent, boltzmannAgent);
+        List<ArmedBanditAgent> agents = List.of(greedyAgent, epsilonGreedyAgent, ucbAgent, boltzmannAgent);
         List<String> agentNames = List.of("Greedy", "Epsilon-Greedy (ε=0.1)", "UCB (c=2)", "Boltzmann (τ=0.5)");
 
         // --- Run Simulation ---
-        for (Agent agent : agents) {
+        for (ArmedBanditAgent agent : agents) {
             MultiArmedBandit simulationBandit = new MultiArmedBandit(trueProbabilities); // Use a fresh bandit for each agent
             for (int step = 0; step < numSteps; step++) {
                 int chosenArm = agent.chooseArm();
@@ -40,7 +40,7 @@ public class BanditRunner {
 
         for (int i = 0; i < agents.size(); i++) {
             String name = agentNames.get(i);
-            Agent agent = agents.get(i);
+            ArmedBanditAgent agent = agents.get(i);
 
             // Format estimated values to 3 decimal places
             double[] estimatedValues = agent.getEstimatedValues();

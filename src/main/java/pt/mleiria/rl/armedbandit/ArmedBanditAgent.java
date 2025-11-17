@@ -3,7 +3,7 @@ package pt.mleiria.rl.armedbandit;
 /**
  * An interface defining the essential methods for any bandit algorithm agent.
  */
-interface Agent {
+interface ArmedBanditAgent {
     /**
      * Chooses an arm to pull based on the agent's strategy.
      *

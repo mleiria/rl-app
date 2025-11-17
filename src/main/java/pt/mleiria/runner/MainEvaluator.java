@@ -2,9 +2,9 @@ package pt.mleiria.runner;
 
 import pt.mleiria.rl.mdp.agent.Agent;
 import pt.mleiria.rl.mdp.env.Environment;
+import pt.mleiria.rl.mdp.env.MouseEnvironment;
 import pt.mleiria.rl.mdp.env.TaxiEnvironment;
-import pt.mleiria.rl.mdp.vo.AgentResult;
-import pt.mleiria.rl.mdp.vo.StepResult;
+import pt.mleiria.rl.mdp.vo.*;
 import pt.mleiria.server.VisualizerServer;
 
 import java.util.ArrayList;
@@ -35,7 +35,18 @@ public class MainEvaluator {
             final int passengerLocation = taxiEnv.getPassengerLocationIdx();
             final int destinationLocation = taxiEnv.getDestinationIdx();
             final int geoSpace = taxiEnv.getTaxiRow() * 5 + taxiEnv.getTaxiCol();
-            server.sendState(geoSpace, episode, step, reward, passengerLocation, destinationLocation);
+            final AgentStatus agentStatus = new AgentStatus(geoSpace, episode, step, reward);
+            final TaxiDriverAgentStatus taxiStatus = new TaxiDriverAgentStatus(agentStatus, passengerLocation, destinationLocation);
+            server.sendState(taxiStatus);
+        } else if (env instanceof MouseEnvironment mouseEnv) {
+            final int hasEaten = mouseEnv.hasEaten() ? 1 : 0;
+            final int hasDrunk = mouseEnv.hasDrunk() ? 1 : 0;
+            final int foodState1D = mouseEnv.getFoodState1D();
+            final int waterState1D = mouseEnv.getWaterState1D();
+            final int geoSpace = mouseEnv.getAgentRow() * mouseEnv.getGridCols() + mouseEnv.getAgentCol();
+            final AgentStatus agentStatus = new AgentStatus(geoSpace, episode, step, reward);
+            final MouseAgentStatus mouseAgentStatus = new MouseAgentStatus(agentStatus, hasEaten, hasDrunk, foodState1D, waterState1D);
+            server.sendState(mouseAgentStatus);
         } else {
             server.sendState(state, episode, step, reward);
         }
@@ -72,10 +83,15 @@ public class MainEvaluator {
             boolean done = false;
             double totalReward = 0;
 
-            // The on-policy/off-policy loop requires choosing the first action before the loop
-            int action = agent.chooseAction(state);
+            // The on-policy loop requires choosing the first action before the loop
+            int action =
+                    AgentType.isOnPolicy(AgentType.valueOf(agent.getName()))
+                            ? agent.chooseAction(state)
+                            : List.of(0, 1, 2, 3, 4, 5).get(new Random().nextInt(env.getNumActions()));
+
             handleProgressLogging(episode);
             int stepCount = 0;
+            agent.reduceEpsilon();
             while (!done) {
                 stepCount++;
                 StepResult result = env.step(action);
@@ -84,16 +100,15 @@ public class MainEvaluator {
                 int nextAction = agent.chooseAction(result.nextState());
 
                 agent.update(state, action, result.reward(), result.nextState(), nextAction);
-
+                // Prepare for next step. The future becomes the present.
                 state = result.nextState();
                 action = nextAction;
                 done = result.done();
                 //PrintUtils.printGridPolicy(agent, env);
                 if (null != server) {
                     handleVisualization(server, env, state, episode, stepCount, totalReward);
+                    sleep(100);
                 }
-                //sleep(100);
-
             }
             episodeRewards.add(totalReward);
             //PrintUtils.printGridPolicy(agent, env);
@@ -102,12 +117,13 @@ public class MainEvaluator {
 
         return new AgentResult(agent.getQTable(), episodeRewards);
     }
-    // Assume qTable is your trained Q-table from the training process
-    // double[][] qTable = your_trained_agent.getQTable();
+// Assume qTable is your trained Q-table from the training process
+// double[][] qTable = your_trained_agent.getQTable();
 
     public static void evaluateAgent(double[][] qTable, Environment env) throws InterruptedException {
         evaluateAgent(qTable, env, null);
     }
+
     public static void evaluateAgent(double[][] qTable, Environment env, VisualizerServer server) {
 
         int totalEpisodes = 1000; // Run a large number of episodes for statistical significance
@@ -123,7 +139,7 @@ public class MainEvaluator {
             int steps = 0;
 
             // Set a max step limit to prevent infinite loops if the agent learned a bad policy
-            int maxStepsPerEpisode = 100;
+            int maxStepsPerEpisode = 999;
             handleProgressLogging(episode);
             while (!done && steps < maxStepsPerEpisode) {
                 // *** IMPORTANT: NO EXPLORATION (EPSILON = 0) ***
@@ -159,12 +175,15 @@ public class MainEvaluator {
         System.out.printf("  - Success Rate: %.2f%%\n", successRate);
         System.out.printf("  - Average Steps per Success: %.2f\n", avgSteps);
         System.out.printf("  - Average Reward per Episode: %.4f\n", avgReward);
+
+        runBenchmarkTestTaxiDriver(qTable);
     }
 
     /**
      * Helper function to find the action with the highest Q-value for a given state.
+     *
      * @param qTable The trained Q-table.
-     * @param state The current state.
+     * @param state  The current state.
      * @return The best action to take.
      */
     public static int getBestAction(double[][] qTable, int state) {
@@ -181,5 +200,40 @@ public class MainEvaluator {
             return new Random().nextInt(qTable[state].length);
         }
         return bestAction;
+    }
+
+    public static void runBenchmarkTestTaxiDriver(double[][] qTable) {
+        TaxiEnvironment env = new TaxiEnvironment();
+
+        System.out.println("\n--- Starting Benchmark Test ---");
+
+        // Benchmark 1: A difficult scenario (e.g., far pickup and dropoff)
+        System.out.println("Benchmark 1: Pickup at Yellow (4,0), Dropoff at Green (0,4)");
+        // Taxi starts at (2,2), Passenger at Y(2), Destination at G(1)
+        int initialState = env.setState(2, 2, 2, 1);
+        runSingleEpisode(env, qTable, initialState);
+
+        // Benchmark 2: An easy scenario
+        System.out.println("\nBenchmark 2: Pickup at Red (0,0), Dropoff at Green (0,4)");
+        // Taxi starts near passenger
+        initialState = env.setState(0, 1, 0, 1);
+        runSingleEpisode(env, qTable, initialState);
+    }
+
+    /**
+     * Helper function to run and print results for one specific episode.
+     */
+    private static void runSingleEpisode(TaxiEnvironment env, double[][] qTable, int state) {
+        boolean done = false;
+        int steps = 0;
+        while (!done) {
+            int action = getBestAction(qTable, state);
+            StepResult result = env.step(action);
+            state = result.nextState();
+            done = result.done();
+            steps++;
+            // You can add visualization calls here if you want
+        }
+        System.out.printf("  -> Episode completed in %d steps.\n", steps);
     }
 }

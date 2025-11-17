@@ -55,15 +55,12 @@ public class VisualizerServer extends WebSocketServer {
             e.printStackTrace();
         }
     }
-    public void sendState(int agentPosition, final int epoch, final int stepCount, final double totalReward,
-                          final int passengerLocation,
-                          final int destinationLocation) {
+
+    public <T> void sendState(T augmentedAgentStatus) {
         // We'll send a simple JSON-like string, e.g., {"agentPosition": 5}
         //String message = String.format("{\"agentPosition\": %d}", agentPosition);
         try {
-            broadcast(JacksonUtils.encode(new TaxiDriverAgentStatus(
-                    new AgentStatus(agentPosition, epoch, stepCount, totalReward),
-                    passengerLocation, destinationLocation)));
+            broadcast(JacksonUtils.encode(augmentedAgentStatus));
         } catch (IOException e) {
             e.printStackTrace();
         }

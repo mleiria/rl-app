@@ -5,14 +5,14 @@ import java.util.Random;
 /**
  * An agent that follows the Boltzmann (Softmax) exploration strategy.
  */
-class BoltzmannAgent implements Agent {
+class BoltzmannArmedBanditAgent implements ArmedBanditAgent {
     private final double temperature;      // τ (controls exploration)
     private final int numArms;
     private final int[] armPullCounts;
     private final double[] estimatedValues;
     private final Random random;
 
-    public BoltzmannAgent(int numArms, double temperature) {
+    public BoltzmannArmedBanditAgent(int numArms, double temperature) {
         this.numArms = numArms;
         this.temperature = temperature;
         this.armPullCounts = new int[numArms];

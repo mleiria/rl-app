@@ -24,14 +24,14 @@
 
         #grid-container {
             display: grid;
-            grid-template-columns: repeat(5, 100px);
-            grid-template-rows: repeat(5, 100px);
+            grid-template-columns: repeat(10, 50px);
+            grid-template-rows: repeat(10, 50px);
             border: 2px solid #333;
         }
 
         .grid-cell {
-            width: 100px;
-            height: 100px;
+            width: 50px;
+            height: 50px;
             border: 1px solid #ccc;
             box-sizing: border-box;
             display: flex;
@@ -49,56 +49,22 @@
             border-radius: 8px;
             width: 250px; /* Give it a fixed width */
         }
-
         #summary h2 {
             margin-top: 0;
             text-align: center;
         }
-
         #summary p {
             font-size: 1.2em;
             margin: 10px 0;
         }
 
         /* Cell styles (unchanged) */
-        .red {
-            background-color: #ff9999;
-        }
-
-        .green {
-            background-color: #99ff99;
-        }
-
-        .yellow {
-            background-color: #ffff99;
-        }
-
-        .blue {
-            background-color: #9999ff;
-        }
-
-        .frozen {
-            background-color: #d4f1f9;
-        }
-
-        .start {
-            background-color: #add8e6;
-        }
-
-        .hole {
-            background-color: #333;
-            color: white;
-        }
-
-        .goal {
-            background-color: #90ee90;
-        }
-
-        .agent {
-            background-color: #ff6347;
-        }
-
-        /* Red for the agent */
+        .frozen { background-color: #d4f1f9; }
+        .food { background-color: purple; }
+        .start { background-color: #add8e6; }
+        .water { background-color: blue;}
+        .goal { background-color: #90ee90; }
+        .agent { background-color: #ff6347; } /* Red for the agent */
     </style>
 </head>
 <body>
@@ -115,8 +81,8 @@
         <p>Episode: <span id="episode-data">...</span></p>
         <p>Step: <span id="step-data">...</span></p>
         <p>Last Reward: <span id="reward-data">...</span></p>
-        <p>Pass. Loc: <span id="pass-loc-data">...</span></p>
-        <p>Drop Off Loc: <span id="dest-loc-data">...</span></p>
+        <p>Has Eaten: <span id="eaten-data">...</span></p>
+        <p>Has Drunk: <span id="drunk-data">...</span></p>
     </div>
 
 </div>
@@ -124,58 +90,31 @@
 <script>
     // --- JavaScript logic (with updates to handle new data) ---
 
-    const GRID_SIZE = 5;
-    const HOLES = [5, 7, 11, 12];
-    const GOAL_STATE = 15;
+    const N_ROWS = 10;
+    const N_COLS = 10;
+    const GRID_SIZE = N_ROWS * N_COLS;
+    const GOAL_STATE = 99;
     let lastAgentPosition = -1;
+    let lastFoodPosition = -1;
+    let lastWaterPosition = -1;
 
     const gridContainer = document.getElementById('grid-container');
     // NEW: Get references to the summary spans
     const episodeSpan = document.getElementById('episode-data');
     const stepSpan = document.getElementById('step-data');
     const rewardSpan = document.getElementById('reward-data');
-
-    const passLocSpan = document.getElementById('pass-loc-data');
-    const destLocSpan = document.getElementById('dest-loc-data');
-
-    let pickUpLocation = -1;
-    let dropOffLocation = -1;
-
-    function decodeLetter(i) {
-        if (i === 0) {
-            return "R";
-        } else if (i === 1) {
-            return "G";
-        } else if (i === 2) {
-            return "Y";
-        } else if (i === 3) {
-            return "B";
-        }else if(i === 4){
-            return "T";
-        }
-    }
+    const eatenSpan = document.getElementById('eaten-data');
+    const drunkSpan = document.getElementById('drunk-data');
 
     // ... (Grid creation logic is the same) ...
-    for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+    for (let i = 0; i < N_ROWS * N_COLS; i++) {
         const cell = document.createElement('div');
         cell.id = `cell-${i}`;
         cell.classList.add('grid-cell');
         let type = 'frozen', text = '';
-        if (i === 0) {
-            type = 'red';
-            text = 'R';
-        } else if (i === 4) {
-            type = 'green';
-            text = 'G';
-        } else if (i === 20) {
-            type = 'yellow';
-            text = 'Y';
-        } else if (i === 24) {
-            type = 'blue';
-            text = 'B';
-        }
-        cell.classList.add(type);
-        cell.innerText = text;
+        if (i === 0) { type = 'start'; text = 'S'; }
+        else if (i === GOAL_STATE) { type = 'goal'; text = 'G'; }
+        cell.classList.add(type); cell.innerText = text;
         gridContainer.appendChild(cell);
     }
 
@@ -184,6 +123,12 @@
         if (lastAgentPosition !== -1) {
             const lastCell = document.getElementById(`cell-${lastAgentPosition}`);
             lastCell.classList.remove('agent');
+
+            const foodCell = document.getElementById(`cell-${lastFoodPosition}`);
+            foodCell.classList.remove('food');
+            const waterCell = document.getElementById(`cell-${lastWaterPosition}`);
+            waterCell.classList.remove('water');
+
         }
         const newCell = document.getElementById(`cell-${newPosition}`);
         newCell.classList.add('agent');
@@ -192,20 +137,24 @@
         episodeSpan.innerText = data.agentStatus.epoch ?? episodeSpan.innerText;
         stepSpan.innerText = data.agentStatus.stepCount ?? stepSpan.innerText;
         rewardSpan.innerText = data.agentStatus.totalReward ?? rewardSpan.innerText;
+        eatenSpan.innerText = data.hasEaten ?? eatenSpan.innerText;
+        drunkSpan.innerText = data.hasDrunk ?? drunkSpan.innerText;
 
-        passLocSpan.innerText = decodeLetter(data.passengerLocation) ?? passLocSpan.innerText;
-        destLocSpan.innerText = decodeLetter(data.destinationLocation) ?? destLocSpan.innerText;
-
-
+        const foodCell = document.getElementById(`cell-${data.foodState1D}`);
+        foodCell.classList.add('food');
+        const waterCell = document.getElementById(`cell-${data.waterState1D}`);
+        waterCell.classList.add('water');
+        lastFoodPosition = data.foodState1D;
+        lastWaterPosition = data.waterState1D;
     }
 
-    const socket = new WebSocket('ws://localhost:8887/taxidriver');
+    const socket = new WebSocket('ws://localhost:8887/mouse');
 
-    socket.onopen = function (event) {
+    socket.onopen = function(event) {
         console.log("Connected to Java visualizer server.");
     };
 
-    socket.onmessage = function (event) {
+    socket.onmessage = function(event) {
         const data = JSON.parse(event.data);
         console.log("Received state:", data);
 

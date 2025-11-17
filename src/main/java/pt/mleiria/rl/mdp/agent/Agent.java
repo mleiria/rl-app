@@ -33,4 +33,9 @@ public interface Agent {
      * @return The name of the agent.
      */
     String getName();
+
+    /**
+     * Reduces the exploration rate (epsilon) of the agent.
+     */
+    void reduceEpsilon();
 }

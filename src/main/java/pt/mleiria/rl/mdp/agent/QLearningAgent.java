@@ -1,5 +1,7 @@
 package pt.mleiria.rl.mdp.agent;
 
+import pt.mleiria.rl.mdp.vo.AgentType;
+
 public class QLearningAgent extends BaseAgent {
 
     /**
@@ -9,23 +11,20 @@ public class QLearningAgent extends BaseAgent {
      * @param numActions The number of actions available to the agent.
      */
     public QLearningAgent(int numStates, int numActions){
-        super("Q-Learning", numStates, numActions, 0.5, 0.99, 0.1);
+        super(AgentType.Q_LEARNING, numStates, numActions, 0.5, 0.99, 0.1);
     }
 
-
+    /**
+     * Updates the Q-value for the given state-action pair using the Q-learning update rule.
+     *
+     * @param state      The current state.
+     * @param action     The action taken.
+     * @param reward     The reward received.
+     * @param nextState  The next state after taking the action.
+     * @param nextAction The action chosen in the next state (not used in Q-learning).
+     */
     @Override
     public void update(int state, int action, double reward, int nextState, int nextAction) {
-        // Find the maximum Q-value for the next state (ignores the actual next action)
-        double maxNextQ = Double.NEGATIVE_INFINITY;
-        for (int a = 0; a < numActions; a++) {
-            if (qTable[nextState][a] > maxNextQ) {
-                maxNextQ = qTable[nextState][a];
-            }
-        }
-        // Update the Q-value for the current state-action pair using the Q-learning formula
-        // qTable[state][action] += alpha * (reward + gamma * maxNextQ - qTable[state][action]);
-        final double tdTarget = reward + gamma * maxNextQ;
-        final double tdError = tdTarget - qTable[state][action];
-        qTable[state][action] += alpha * tdError;
+        updateQLearning(state, action, reward, nextState, nextAction);
     }
 }

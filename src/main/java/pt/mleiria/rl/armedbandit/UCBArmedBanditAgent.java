@@ -3,14 +3,14 @@ package pt.mleiria.rl.armedbandit;
 /**
  * An agent that follows the Upper Confidence Bound (UCB) strategy.
  */
-class UCBAgent implements Agent {
+class UCBArmedBanditAgent implements ArmedBanditAgent {
     private final double c;
     private final int numArms;
     private int totalPulls;
     private final int[] armPullCounts;
     private final double[] estimatedValues;
 
-    public UCBAgent(int numArms, double c) {
+    public UCBArmedBanditAgent(int numArms, double c) {
         this.numArms = numArms;
         this.c = c;
         this.totalPulls = 0;

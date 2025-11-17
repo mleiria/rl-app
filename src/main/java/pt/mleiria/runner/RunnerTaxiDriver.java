@@ -18,7 +18,7 @@ public class RunnerTaxiDriver {
         // Start the visualizer server on a specific port
         VisualizerServer server = new VisualizerServer(8887);
         server.start();
-        int episodes = 1000; // Number of episodes to train the agents
+        int episodes = 1000000; // Number of episodes to train the agents
 
         System.out.println("\n=================================================");
         System.out.println("        RUNNING ON TAXI ENVIRONMENT              ");
@@ -30,7 +30,7 @@ public class RunnerTaxiDriver {
         Agent sarsaAgentTaxi = new SARSAAgent(taxiEnv.getNumStates(), taxiEnv.getNumActions());
 
         // Train agents (Taxi might need more episodes due to its larger state space)
-        AgentResult qResultTaxi = trainAgent(qLearningAgentTaxi, taxiEnv, episodes, server);
+        AgentResult qResultTaxi = trainAgent(qLearningAgentTaxi, taxiEnv, episodes);
         evaluateAgent(qResultTaxi.qTable(), taxiEnv, server);
         //AgentResult sarsaResultTaxi = trainAgent(sarsaAgentTaxi, taxiEnv, taxiEpisodes);
 

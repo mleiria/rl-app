@@ -5,14 +5,14 @@ import java.util.Random;
 /**
  * An agent that follows the Epsilon-Greedy strategy.
  */
-class EpsilonGreedyAgent implements Agent {
+class EpsilonGreedyArmedBanditAgent implements ArmedBanditAgent {
     private final double epsilon;
     private final int numArms;
     private final int[] armPullCounts;
     private final double[] estimatedValues;
     private final Random random;
 
-    public EpsilonGreedyAgent(int numArms, double epsilon) {
+    public EpsilonGreedyArmedBanditAgent(int numArms, double epsilon) {
         this.numArms = numArms;
         this.epsilon = epsilon;
         this.armPullCounts = new int[numArms];

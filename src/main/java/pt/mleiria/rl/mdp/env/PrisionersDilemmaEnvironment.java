@@ -1,5 +1,6 @@
 package pt.mleiria.rl.mdp.env;
 
+import pt.mleiria.rl.mdp.env.marl.MultiAgentEnvironment;
 import pt.mleiria.rl.mdp.vo.MultiAgentStepResult;
 
 public class PrisionersDilemmaEnvironment implements MultiAgentEnvironment {
@@ -48,20 +49,20 @@ public class PrisionersDilemmaEnvironment implements MultiAgentEnvironment {
     }
 
     @Override
-    public MultiAgentStepResult step(int action1, int action2) {
-        if (action1 < 0 || action1 > 1 || action2 < 0 || action2 > 1) {
+    public MultiAgentStepResult step(int[] actions) {
+        if (actions[0] < 0 || actions[0] > 1 || actions[1] < 0 || actions[1] > 1) {
             throw new IllegalArgumentException("Actions must be 0 (COOPERATE) or 1 (DEFECT)");
         }
         currentRound++;
+        double[] rewards = new double[]{PAYOFFS[actions[0]][actions[1]], PAYOFFS[actions[1]][actions[0]]};
+        //double reward1 = PAYOFFS[actions[0]][actions[1]];
+        //double reward2 = PAYOFFS[actions[1]][actions[0]];
 
-        double reward1 = PAYOFFS[action1][action2];
-        double reward2 = PAYOFFS[action2][action1];
-
-        int nextState1 = (action2 == COOPERATE) ? STATE_OPPONENT_COOPERATED : STATE_OPPONENT_DEFECTED;
-        int nextState2 = (action1 == COOPERATE) ? STATE_OPPONENT_COOPERATED : STATE_OPPONENT_DEFECTED;
+        int nextState1 = (actions[1] == COOPERATE) ? STATE_OPPONENT_COOPERATED : STATE_OPPONENT_DEFECTED;
+        int nextState2 = (actions[0] == COOPERATE) ? STATE_OPPONENT_COOPERATED : STATE_OPPONENT_DEFECTED;
 
         boolean done = currentRound >= roundsPerEpisode;
 
-        return new MultiAgentStepResult(nextState1, nextState2, reward1, reward2, done);
+        return new MultiAgentStepResult(nextState1, nextState2, rewards, done);
     }
 }
